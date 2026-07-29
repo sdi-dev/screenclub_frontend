@@ -1,16 +1,40 @@
-# React + Vite
+# ScreenClub Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Cette application web est le frontend de mon projet ScreenClub, un clone de Letterboxd en mieux !
 
-Currently, two official plugins are available:
+Date de début: Novembre/Décembre 2025
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+Auteur: Yanis Saoudi
 
-## React Compiler
+Pour: Doranco - TP Concepteur Développeur d'Applications
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Fonctionnalités
 
-## Expanding the ESLint configuration
+- Inscription
+- Connexion
+- Laisser un avis
+- Créer une watchlist (privée ou publique)
+- Voir et modifier son profil
+- Liker des contenus (avis, watchlist, médias)
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+Bonus : changements de thèmes de couleurs
+
+## Stack technique
+
+- React JS
+- Vite JS
+- React Router
+- Tailwind CSS
+- DaisyUI
+- Lucide React
+- API TMDb (pour les données média)
+
+## Développement
+
+Version actuelle : 0.3
+
+IDE : JetBrains Webstorm 2026.X
+
+## Remerciements
+
+Je remercie mes camarades de classe, mes formateurs Ryadh, Bassirou, Valérian, Mounir et Malek pour leur accompagnement et soutien lors de la réalisation de ce projet ainsi que pour cette excellente année.
