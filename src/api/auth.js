@@ -67,22 +67,31 @@ export async function register(pseudo, email, password, birthDate) {
 /**
  * Récupère les données de l'utilisateur connecté depuis le token JWT stocké.
  * Retourne null si non connecté ou token invalide.
- * @returns {{ id: string, username: string, email: string, avatar: string|null } | null}
+ * @returns {{ id: number, username: string, email: string, avatar: string|null, role: string|null } | null}
  */
 export function getUser() {
-    const token = localStorage.getItem("token"); // adapte la clé si besoin
+    const token = localStorage.getItem("token");
     if (!token) return null;
 
     try {
         // Décode le payload JWT (base64url → JSON), sans vérification de signature
         const payload = JSON.parse(atob(token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/")));
         return {
-            id:       payload.id       ?? payload.sub ?? null,
-            username: payload.username ?? payload.name ?? payload.pseudo ?? "Utilisateur",
-            email:    payload.email    ?? "",
-            avatar:   payload.avatar   ?? null,
+            id:       payload.id != null ? Number(payload.id) : null,
+            username: payload.pseudo ?? payload.username ?? payload.name ?? "Utilisateur", // claim "pseudo" dans le JWT Spring
+            email:    payload.email ?? "",
+            avatar:   payload.avatar ?? null,
+            role:     payload.role ?? null, // "ADMIN" | "USER" | etc.
         };
     } catch {
         return null;
     }
+}
+
+/**
+ * Vérifie si l'utilisateur connecté est administrateur.
+ * @returns {boolean}
+ */
+export function isAdmin() {
+    return getUser()?.role === "ADMIN";
 }

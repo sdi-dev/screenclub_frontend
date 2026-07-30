@@ -6,6 +6,7 @@ const THEMES = [
     { value: "red",     label: "Braise",    color: "oklch(67% 0.30 22)" },
     { value: "vite",    label: "Nébuleuse", color: "oklch(68% 0.33 290)" },
     { value: "frost",   label: "Frost",     color: "oklch(55% 0.26 274)" },
+    { value: "cyber",   label: "Cyber",     color: "oklch(78% 0.28 195)" },
 ];
 
 const DEFAULT = "jaune";

@@ -1,12 +1,12 @@
 import { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
-import {login, register} from "@/api/auth";
+import {getUser, login, register} from "@/api/auth";
+import {useNavigate} from "react-router-dom";
 
 // Regex mot de passe : 12 car. min, 1 maj, 1 min, 1 chiffre ou caractère spécial
-const PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*[\d!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]).{12,}$/;
+const PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*[\d!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]).{12,}$/;
 
 function AuthModal({ isOpen, onClose }) {
-
     const [error, setError]               = useState("");
     const [loading, setLoading]           = useState(false);
     const [mode, setMode]                 = useState("login");
@@ -20,7 +20,9 @@ function AuthModal({ isOpen, onClose }) {
         confirm: "",
         birthDate: "",
     });
+
     const timeoutRef = useRef(null);
+    const navigate = useNavigate();
 
     const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
 
@@ -32,6 +34,12 @@ function AuthModal({ isOpen, onClose }) {
             if (displayedMode === "login") {
                 await login(form.identifier, form.password);
                 onClose();
+                const user = getUser();
+                if (user?.role === "ADMIN") {
+                    navigate("/admin/dashboard");
+                } else {
+                    navigate("/timeline")
+                }
 
             } else {
                 // Validations inscription côté client
@@ -65,7 +73,7 @@ function AuthModal({ isOpen, onClose }) {
             setTransitioning(false);
         }, 200);
         return () => clearTimeout(timeoutRef.current);
-    }, [mode]);
+    }, [displayedMode, mode]);
 
     const switchMode = (m) => { if (m !== mode) setMode(m); };
 

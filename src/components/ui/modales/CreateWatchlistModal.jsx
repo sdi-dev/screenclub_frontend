@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
-import { createWatchlist } from "@/api/watchlist";
+import { createWatchlist } from "@api/Watchlist";
 import SuccessScreen from "@components/ui/SuccessScreen.jsx";
-import { searchMedias } from "@/api/media";
+import { searchMedias } from "@api/Media";
 
 // ─── Debounce hook pour la recherche de médias ────────────────────────────────
 function useDebounce(value, delay = 350) {
@@ -205,7 +205,7 @@ function CreateWatchlistModal({ isOpen, onClose, initialMedia = null }) {
 
                         {/* ── Écran succès ── */}
                         {success ? (
-                            <SuccessScreen message="Ta watchlist a bien été créée, elle est maintenant disponible sur ton profil." />
+                            <SuccessScreen variant="watchlist" message="Ta watchlist a bien été créée, elle est maintenant disponible sur ton profil." />
                         ) : (<>
 
                             {/* ── Header ── */}
@@ -227,7 +227,7 @@ function CreateWatchlistModal({ isOpen, onClose, initialMedia = null }) {
                                 </button>
                             </div>
 
-                        {/* ── Toggle PUBLIC / PRIVATE ── */}
+                            {/* ── Toggle PUBLIC / PRIVATE ── */}
                             <div
                                 className="flex rounded-xl p-1 mb-8"
                                 style={{ background: "oklch(from var(--color-base-300) l c h / 0.6)" }}
@@ -247,7 +247,7 @@ function CreateWatchlistModal({ isOpen, onClose, initialMedia = null }) {
                                 ))}
                             </div>
 
-                        {/* ── Formulaire ── */}
+                            {/* ── Formulaire ── */}
                             <div className="form-enter flex flex-col gap-4">
 
                                 {/* Titre */}

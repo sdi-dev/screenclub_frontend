@@ -24,10 +24,10 @@
     default: true;
     color-scheme: dark;
 
-    --color-base-100: oklch(10% 0.008 60);
-    --color-base-200: oklch(15% 0.012 60);
-    --color-base-300: oklch(20% 0.015 60);
-    --color-base-content: oklch(90% 0.03 80);
+    --color-base-100: oklch(17% 0.010 60);
+    --color-base-200: oklch(22% 0.014 60);
+    --color-base-300: oklch(27% 0.017 60);
+    --color-base-content: oklch(92% 0.03 80);
 
     --color-primary: oklch(78% 0.18 75);
     --color-primary-content: oklch(10% 0.01 75);
@@ -38,7 +38,7 @@
     --color-accent: oklch(65% 0.15 55);
     --color-accent-content: oklch(10% 0.01 55);
 
-    --color-neutral: oklch(22% 0.015 60);
+    --color-neutral: oklch(29% 0.017 60);
     --color-neutral-content: oklch(75% 0.03 80);
 
     --color-info: oklch(68% 0.14 220);
@@ -68,10 +68,10 @@
     name: "jamaica";
     color-scheme: dark;
 
-    --color-base-100: oklch(11% 0.015 130);
-    --color-base-200: oklch(16% 0.022 125);
-    --color-base-300: oklch(21% 0.030 120);
-    --color-base-content: oklch(94% 0.045 105);
+    --color-base-100: oklch(18% 0.018 130);
+    --color-base-200: oklch(23% 0.026 125);
+    --color-base-300: oklch(28% 0.034 120);
+    --color-base-content: oklch(95% 0.045 105);
 
     /* Vert électrique plus saturé et plus vif */
     --color-primary: oklch(79% 0.26 145);
@@ -85,7 +85,7 @@
     --color-accent: oklch(62% 0.23 158);
     --color-accent-content: oklch(10% 0.02 158);
 
-    --color-neutral: oklch(24% 0.022 120);
+    --color-neutral: oklch(31% 0.025 120);
     --color-neutral-content: oklch(88% 0.04 100);
 
     --color-info: oklch(70% 0.15 220);
@@ -116,9 +116,9 @@
     name: "red";
     color-scheme: dark;
 
-    --color-base-100: oklch(8% 0.004 0);
-    --color-base-200: oklch(13% 0.006 0);
-    --color-base-300: oklch(19% 0.009 0);
+    --color-base-100: oklch(15% 0.006 0);
+    --color-base-200: oklch(20% 0.008 0);
+    --color-base-300: oklch(26% 0.011 0);
     --color-base-content: oklch(95% 0.005 0);
 
     /* Cinabre vif — plus lumineux et saturé qu'avant */
@@ -133,7 +133,7 @@
     --color-accent: oklch(76% 0.18 48);
     --color-accent-content: oklch(10% 0.005 0);
 
-    --color-neutral: oklch(20% 0.005 0);
+    --color-neutral: oklch(27% 0.006 0);
     --color-neutral-content: oklch(75% 0.005 0);
 
     --color-info: oklch(68% 0.14 220);
@@ -219,9 +219,9 @@ et les animations levitate/shadowPulse du Hero2.
     color-scheme: dark;
 
     /* Fonds ultra-sombres avec légère teinte violet-indigo */
-    --color-base-100: oklch(12% 0.028 285);
-    --color-base-200: oklch(8% 0.020 285);
-    --color-base-300: oklch(5% 0.012 285);
+    --color-base-100: oklch(19% 0.032 285);
+    --color-base-200: oklch(14% 0.024 285);
+    --color-base-300: oklch(10% 0.016 285);
     --color-base-content: oklch(96% 0.020 270);
 
     /* Indigo électrique — couleur signature */
@@ -236,7 +236,7 @@ et les animations levitate/shadowPulse du Hero2.
     --color-accent: oklch(82% 0.22 192);
     --color-accent-content: oklch(11% 0.025 192);
 
-    --color-neutral: oklch(18% 0.025 280);
+    --color-neutral: oklch(25% 0.030 280);
     --color-neutral-content: oklch(88% 0.015 280);
 
     --color-info: oklch(75% 0.16 215);
@@ -251,6 +251,59 @@ et les animations levitate/shadowPulse du Hero2.
     --radius-selector: 1rem;
     --radius-field: 0.5rem;
     --radius-box: 1rem;
+    --size-selector: 0.25rem;
+    --size-field: 0.25rem;
+    --border: 1px;
+    --depth: 1;
+    --noise: 0;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   CYBER — Cyberpunk néon arc-en-ciel + effets VHS
+   Concept : fond void noir-violet, primary cyan électrique,
+   secondary magenta néon, accent vert matrix.
+   Glitch scanlines, chromatic aberration, CRT flicker.
+   Pour les vrais. 🕹️
+───────────────────────────────────────────────────────────── */
+@plugin "daisyui/theme" {
+    name: "cyber";
+    color-scheme: dark;
+
+    /* Fonds : noir profond teinté violet */
+    --color-base-100: oklch(9% 0.022 285);
+    --color-base-200: oklch(6% 0.016 285);
+    --color-base-300: oklch(4% 0.010 285);
+    --color-base-content: oklch(95% 0.030 195);
+
+    /* Cyan électrique — couleur signature */
+    --color-primary: oklch(78% 0.28 195);
+    --color-primary-content: oklch(8% 0.020 195);
+
+    /* Magenta/fuchsia néon — pop maximal */
+    --color-secondary: oklch(72% 0.32 330);
+    --color-secondary-content: oklch(8% 0.015 330);
+
+    /* Vert matrix — accent terminal */
+    --color-accent: oklch(75% 0.26 140);
+    --color-accent-content: oklch(8% 0.020 140);
+
+    /* Neutre violet sombre */
+    --color-neutral: oklch(16% 0.028 280);
+    --color-neutral-content: oklch(90% 0.020 280);
+
+    --color-info: oklch(76% 0.20 220);
+    --color-info-content: oklch(8% 0.020 220);
+    --color-success: oklch(74% 0.26 140);
+    --color-success-content: oklch(8% 0.020 140);
+    --color-warning: oklch(82% 0.22 80);
+    --color-warning-content: oklch(8% 0.010 80);
+    --color-error: oklch(68% 0.30 15);
+    --color-error-content: oklch(97% 0.010 15);
+
+    /* Bords assez carrés — style UI techno */
+    --radius-selector: 0rem;
+    --radius-field: 0.125rem;
+    --radius-box: 0.25rem;
     --size-selector: 0.25rem;
     --size-field: 0.25rem;
     --border: 1px;

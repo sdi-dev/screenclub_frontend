@@ -1,11 +1,10 @@
 import GridBackground from "@components/layout/GridBackground.jsx";
 import duneImg from "@images/dune_2.jpg";
-import AuthModal from "@components/ui/modales/AuthModal.jsx";
-import { useState } from "react";
+import { useAuth } from "@/context/AuthContext.jsx";
 import { Link } from "react-router-dom";
 
 function Hero2() {
-    const [authOpen, setAuthOpen] = useState(false);
+    const { openAuthModal } = useAuth();
 
     return (
         <>
@@ -138,13 +137,14 @@ function Hero2() {
                             <div className="h2-cta mt-10 flex flex-wrap items-center justify-center lg:justify-start gap-4">
                                 <button
                                     className="btn btn-primary font-bold uppercase"
-                                    onClick={() => setAuthOpen(true)}
+                                    onClick={openAuthModal}
                                 >
                                     Connexion
                                 </button>
-                                <AuthModal isOpen={authOpen} onClose={() => setAuthOpen(false)} />
-                                <button className="btn btn-secondary font-bold uppercase"
-                                        onClick={() => document.getElementById("features")?.scrollIntoView({ behavior: "smooth" })}>
+                                <button
+                                    className="btn btn-secondary font-bold uppercase"
+                                    onClick={() => document.getElementById("features")?.scrollIntoView({ behavior: "smooth" })}
+                                >
                                     En savoir plus
                                 </button>
                             </div>

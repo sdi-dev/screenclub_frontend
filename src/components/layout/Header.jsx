@@ -1,19 +1,19 @@
 import AuthModal from "@components/ui/modales/AuthModal.jsx";
-import CreateWatchlistModal from "@components/ui/modales/CreateWatchlistModal.jsx";
 import SearchBar from "@components/ui/SearchBar.jsx";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { isConnected, logout, getUser } from "@/api/auth.js";
+import { logout, getUser } from "@/api/auth.js";
 import { fetchAuth } from "@/api/fetchAuth.js";
 import { useTheme } from "@/hooks/useTheme.js";
+import { useAuth } from "@/context/AuthContext.jsx";
 import {
     X, Menu, Search, Moon, ChevronDown, Check, LogOut,
-    User, Heart, List, Plus, Star, Home, TrendingUp, LayoutGrid,
-    PanelRightOpen,
+    User, List, Star, Home, TrendingUp, Trophy,
+    PanelRightOpen, Settings, LayoutDashboard,
 } from "lucide-react";
 
 // ─── Sidebar utilisateur ──────────────────────────────────────────────────
-function UserSidebar({ isOpen, onClose, user, onLogout, onCreateWatchlist, onAddAvis }) {
+function UserSidebar({ isOpen, onClose, user, onLogout }) {
     const sidebarRef = useRef(null);
 
     useEffect(() => {
@@ -29,12 +29,13 @@ function UserSidebar({ isOpen, onClose, user, onLogout, onCreateWatchlist, onAdd
 
     const avatarUrl = user?.avatar
         ? user.avatar
-        : `https://api.dicebear.com/8.x/initials/svg?seed=${encodeURIComponent(user?.username ?? "U")}&backgroundColor=6366f1`;
+        : "https://placehold.co/120x120/252729/orange?text=?&font=montserrat";
 
     return (
         <>
             <div
-                className={`fixed inset-0 z-60 bg-black/50 backdrop-blur-sm transition-opacity duration-300 ${isOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"}`}
+                className={`fixed inset-0 z-60 transition-opacity duration-300 ${isOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"}`}
+                style={{ background: "rgba(0,0,0,0.6)", backdropFilter: "blur(6px)" }}
                 onClick={onClose}
                 aria-hidden="true"
             />
@@ -43,72 +44,94 @@ function UserSidebar({ isOpen, onClose, user, onLogout, onCreateWatchlist, onAdd
                 role="dialog"
                 aria-modal="true"
                 aria-label="Menu utilisateur"
-                className={`fixed top-0 right-0 z-70 h-full w-80 bg-base-100 shadow-2xl flex flex-col transition-transform duration-300 ease-in-out ${isOpen ? "translate-x-0" : "translate-x-full"}`}
+                className={`fixed top-0 right-0 z-70 h-full w-80 flex flex-col transition-transform duration-300 ease-in-out ${isOpen ? "translate-x-0" : "translate-x-full"}`}
+                style={{
+                    background: "rgba(10, 10, 14, 0.75)",
+                    backdropFilter: "blur(28px)",
+                    WebkitBackdropFilter: "blur(28px)",
+                    borderLeft: "1px solid rgba(255,255,255,0.07)",
+                    boxShadow: "-8px 0 48px rgba(0,0,0,0.6), inset 1px 0 0 rgba(255,255,255,0.04)",
+                }}
             >
-                <div className="flex items-center justify-between px-5 py-4 border-b border-base-300">
-                    <span className="font-bold text-base-content uppercase tracking-widest text-xs">Mon compte</span>
-                    <button className="btn btn-ghost btn-sm btn-circle" onClick={onClose} aria-label="Fermer le menu">
+                {/* Glow accent en haut */}
+                <div className="absolute top-0 right-0 w-48 h-48 pointer-events-none"
+                     style={{ background: "radial-gradient(circle at top right, oklch(from var(--color-primary) l c h / 0.12) 0%, transparent 70%)" }} />
+
+                <div className="flex items-center justify-between px-5 py-4"
+                     style={{ borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
+                    <span className="font-bold text-white/50 uppercase tracking-widest text-xs">Mon compte</span>
+                    <button className="btn btn-ghost btn-sm btn-circle text-white/40 hover:text-white hover:bg-white/10" onClick={onClose} aria-label="Fermer le menu">
                         <X size={16} />
                     </button>
                 </div>
 
-                <div className="flex flex-col items-center gap-3 px-6 py-6 border-b border-base-300">
+                <div className="flex flex-col items-center gap-3 px-6 py-6 relative"
+                     style={{ borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
                     <div className="avatar">
-                        <div className="w-20 rounded-full ring ring-primary ring-offset-base-100 ring-offset-2">
-                            <img src={avatarUrl} alt={`Avatar de ${user?.username ?? "utilisateur"}`} />
+                        <div className="w-20 rounded-full" style={{ boxShadow: "0 0 0 2px oklch(from var(--color-primary) l c h / 0.6), 0 0 24px oklch(from var(--color-primary) l c h / 0.3)" }}>
+                            <img src={avatarUrl} alt={`Avatar de ${user?.username ?? "utilisateur"}`} className="rounded-full" />
                         </div>
                     </div>
                     <div className="text-center">
-                        <p className="font-bold text-base-content text-lg leading-tight">{user?.username ?? "Utilisateur"}</p>
-                        <p className="text-sm text-base-content/50 mt-0.5">{user?.email ?? ""}</p>
+                        <p className="font-bold text-white text-lg leading-tight">{user?.username ?? "Utilisateur"}</p>
+                        <p className="text-sm text-white/35 mt-0.5">{user?.email ?? ""}</p>
                     </div>
                 </div>
 
                 <nav className="flex flex-col gap-1 px-3 py-4 flex-1 overflow-y-auto">
-                    <p className="text-xs uppercase font-semibold text-base-content/40 px-3 pb-1 pt-2">Mes contenus</p>
+                    <p className="text-xs uppercase font-semibold text-white/25 px-3 pb-1 pt-2 tracking-widest">Compte</p>
 
-                    <button onClick={() => { onCreateWatchlist(); onClose(); }} className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-primary/10 hover:text-primary transition-colors group w-full text-left">
-                        <span className="w-8 h-8 flex items-center justify-center rounded-md bg-primary/10 group-hover:bg-primary/20 text-primary transition-colors">
-                            <Plus size={16} />
-                        </span>
-                        <span className="font-semibold text-sm">Créer une Watchlist</span>
-                    </button>
-
-                    <button onClick={() => { onAddAvis(); onClose(); }} className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-secondary/10 hover:text-secondary transition-colors group w-full text-left">
-                        <span className="w-8 h-8 flex items-center justify-center rounded-md bg-secondary/10 group-hover:bg-secondary/20 text-secondary transition-colors">
-                            <Star size={16} />
-                        </span>
-                        <span className="font-semibold text-sm">Ajouter un avis</span>
-                    </button>
-
-                    <Link to="/mes-suivis" className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-accent/10 hover:text-accent transition-colors group">
-                        <span className="w-8 h-8 flex items-center justify-center rounded-md bg-accent/10 group-hover:bg-accent/20 text-accent transition-colors">
-                            <Heart size={16} />
-                        </span>
-                        <span className="font-semibold text-sm">Mes suivis</span>
-                    </Link>
-
-                    <Link to="/mes-watchlists" className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-primary/10 hover:text-primary transition-colors group">
-                        <span className="w-8 h-8 flex items-center justify-center rounded-md bg-primary/10 group-hover:bg-primary/20 text-primary transition-colors">
-                            <List size={16} />
-                        </span>
-                        <span className="font-semibold text-sm">Mes Watchlists</span>
-                    </Link>
-
-                    <div className="divider my-1" />
-                    <p className="text-xs uppercase font-semibold text-base-content/40 px-3 pb-1">Compte</p>
-
-                    <Link to="/profil" className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-base-200 transition-colors group" onClick={onClose}>
-                        <span className="w-8 h-8 flex items-center justify-center rounded-md bg-base-200 group-hover:bg-base-300 transition-colors">
-                            <User size={16} />
+                    <Link to="/profil" onClick={onClose}
+                          className="flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 group"
+                          style={{ color: "rgba(255,255,255,0.75)" }}
+                          onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.07)"}
+                          onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
+                        <span className="w-8 h-8 flex items-center justify-center rounded-lg transition-colors"
+                              style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.08)" }}>
+                            <User size={15} />
                         </span>
                         <span className="font-semibold text-sm">Mon profil</span>
                     </Link>
+
+                    <Link to="/parametres" onClick={onClose}
+                          className="flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 group"
+                          style={{ color: "rgba(255,255,255,0.75)" }}
+                          onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.07)"}
+                          onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
+                        <span className="w-8 h-8 flex items-center justify-center rounded-lg transition-colors"
+                              style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.08)" }}>
+                            <Settings size={15} />
+                        </span>
+                        <span className="font-semibold text-sm">Paramètres</span>
+                    </Link>
+
+                    {user?.role === "ADMIN" && (
+                        <>
+                            <p className="text-xs uppercase font-semibold text-white/25 px-3 pb-1 pt-4 tracking-widest">Administration</p>
+                            <Link to="/admin/dashboard" onClick={onClose}
+                                  className="flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200"
+                                  style={{ color: "oklch(from var(--color-primary) l c h)" }}
+                                  onMouseEnter={e => e.currentTarget.style.background = "oklch(from var(--color-primary) l c h / 0.1)"}
+                                  onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
+                                <span className="w-8 h-8 flex items-center justify-center rounded-lg"
+                                      style={{ background: "oklch(from var(--color-primary) l c h / 0.15)", border: "1px solid oklch(from var(--color-primary) l c h / 0.3)" }}>
+                                    <LayoutDashboard size={15} />
+                                </span>
+                                <span className="font-black text-sm font-unbounded">Dashboard</span>
+                            </Link>
+                        </>
+                    )}
                 </nav>
 
-                <div className="px-3 pb-5 pt-2 border-t border-base-300">
-                    <button className="btn btn-error btn-outline w-full gap-2" onClick={() => { onLogout(); onClose(); }}>
-                        <LogOut size={16} />
+                <div className="px-3 pb-5 pt-2" style={{ borderTop: "1px solid rgba(255,255,255,0.07)" }}>
+                    <button
+                        onClick={() => { onLogout(); onClose(); }}
+                        className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200"
+                        style={{ background: "rgba(239,68,68,0.12)", border: "1px solid rgba(239,68,68,0.25)", color: "rgb(248,113,113)" }}
+                        onMouseEnter={e => e.currentTarget.style.background = "rgba(239,68,68,0.22)"}
+                        onMouseLeave={e => e.currentTarget.style.background = "rgba(239,68,68,0.12)"}
+                    >
+                        <LogOut size={15} />
                         Déconnexion
                     </button>
                 </div>
@@ -119,18 +142,17 @@ function UserSidebar({ isOpen, onClose, user, onLogout, onCreateWatchlist, onAdd
 
 // ─── Header ────────────────────────────────────────────────────────────────
 function Header() {
-    const [authOpen,          setAuthOpen]          = useState(false);
+    // ── Auth via Context (remplace les states locaux authOpen + connected) ──
+    const { authOpen, openAuthModal, closeAuthModal, connected, refreshConnected } = useAuth();
+
     const [sidebarOpen,       setSidebarOpen]       = useState(false);
-    const [watchlistModalOpen,setWatchlistModalOpen] = useState(false);
-    const [avisModalOpen,     setAvisModalOpen]     = useState(false);
-    const [connected,         setConnected]         = useState(isConnected());
     const [user,              setUser]              = useState(null);
     const [mobileSearchOpen,  setMobileSearchOpen]  = useState(false);
     const { theme, setTheme, themes }               = useTheme();
     const navigate                                  = useNavigate();
 
     // Charge les données user fraîches depuis l'API (avatar réel en BDD)
-    const loadUser = async () => {
+    const loadUser = useCallback(async () => {
         const base = getUser(); // données JWT (id, username, email…)
         if (!base) return;
         setUser(base); // affiche immédiatement le fallback JWT
@@ -140,18 +162,19 @@ function Header() {
         } catch {
             // silencieux — on conserve les données JWT
         }
-    };
+    }, []);
 
     useEffect(() => {
-        if (connected) loadUser();
-    }, [connected]);
+        if (connected) {
+            void loadUser();
+        } else {
+            setUser(null);
+        }
+    }, [connected, loadUser]);
 
     useEffect(() => {
         const onStorageChange = () => {
-            const nowConnected = isConnected();
-            setConnected(nowConnected);
-            if (nowConnected) loadUser();
-            else setUser(null);
+            refreshConnected();
         };
         // "storage" = changements depuis un autre onglet
         // "profileUpdated" = changement depuis la même page (ex: page profil)
@@ -161,25 +184,23 @@ function Header() {
             window.removeEventListener("storage", onStorageChange);
             window.removeEventListener("profileUpdated", onStorageChange);
         };
-    }, []);
+    }, [refreshConnected]);
 
     function handleAuthClose() {
-        setAuthOpen(false);
-        const nowConnected = isConnected();
-        setConnected(nowConnected);
-        if (nowConnected) loadUser();
+        closeAuthModal();
+        refreshConnected();
     }
 
     function handleLogout() {
         logout();
-        setConnected(false);
+        refreshConnected();
         setUser(null);
         navigate("/");
     }
 
     const avatarUrl = user?.avatar
         ? user.avatar
-        : `https://api.dicebear.com/8.x/initials/svg?seed=${encodeURIComponent(user?.username ?? "U")}&backgroundColor=6366f1`;
+        : "https://placehold.co/120x120/252729/orange?text=?&font=montserrat";
 
     return (
         <>
@@ -193,10 +214,10 @@ function Header() {
                             <Menu size={20} />
                         </div>
                         <ul tabIndex="-1" className="menu menu-sm dropdown-content bg-base-100 rounded-box z-1 mt-3 w-52 p-2 shadow uppercase font-semibold text-secondary">
-                            <li><Link to="/" className="flex items-center gap-2"><Home size={14} />Accueil</Link></li>
+                            <li><Link to={connected ? "/timeline" : "/"} className="flex items-center gap-2"><Home size={14} />Accueil</Link></li>
                             <li><Link to="/tendances" className="flex items-center gap-2"><TrendingUp size={14} />Tendances</Link></li>
                             <li>
-                                <a className="flex items-center gap-2"><LayoutGrid size={14} />Fonctionnalités</a>
+                                <a className="flex items-center gap-2"><Trophy size={14} />Tops</a>
                                 <ul className="p-2">
                                     <li><Link to="/topavis" className="flex items-center gap-2"><Star size={13} />Avis</Link></li>
                                     <li><Link to="/topwatchlists" className="flex items-center gap-2"><List size={13} />Watchlists</Link></li>
@@ -204,7 +225,7 @@ function Header() {
                             </li>
                         </ul>
                     </div>
-                    <Link to="/" className="uppercase font-bold font-unbounded text-primary drop-shadow-lg drop-shadow-primary/30">
+                    <Link to={connected ? "/timeline" : "/"} className="uppercase font-bold font-unbounded text-primary drop-shadow-lg drop-shadow-primary/30">
                         ScreenClub
                     </Link>
                 </div>
@@ -212,11 +233,11 @@ function Header() {
                 {/* CENTER : menu horizontal (desktop uniquement) */}
                 <div className="navbar-center hidden lg:flex">
                     <ul className="menu menu-horizontal px-1 uppercase font-semibold text-secondary">
-                        <li><Link to="/" className="flex items-center gap-1.5"><Home size={14} />Accueil</Link></li>
+                        <li><Link to={connected ? "/timeline" : "/"} className="flex items-center gap-1.5"><Home size={14} />Accueil</Link></li>
                         <li><Link to="/tendances" className="flex items-center gap-1.5"><TrendingUp size={14} />Tendances</Link></li>
                         <li>
                             <details>
-                                <summary className="flex items-center gap-1.5"><LayoutGrid size={14} />Fonctionnalités</summary>
+                                <summary className="flex items-center gap-1.5"><Trophy size={14} />Tops</summary>
                                 <ul className="p-2 bg-base-100 w-40 z-1">
                                     <li><Link to="/topavis" className="flex items-center gap-1.5"><Star size={13} />Avis</Link></li>
                                     <li><Link to="/topwatchlists" className="flex items-center gap-1.5"><List size={13} />Watchlists</Link></li>
@@ -318,7 +339,7 @@ function Header() {
                                   style={{ boxShadow: "0 0 0 3px oklch(from var(--color-primary) l c h / 0.35), 0 0 12px oklch(from var(--color-primary) l c h / 0.25)" }} />
                         </button>
                     ) : (
-                        <a className="btn btn-primary btn-sm hover:btn-accent duration-150 transition-colors ease-in-out" onClick={() => setAuthOpen(true)}>
+                        <a className="btn btn-primary btn-sm hover:btn-accent duration-150 transition-colors ease-in-out" onClick={openAuthModal}>
                             Connexion
                         </a>
                     )}
@@ -346,15 +367,8 @@ function Header() {
                 onClose={() => setSidebarOpen(false)}
                 user={user}
                 onLogout={handleLogout}
-                onCreateWatchlist={() => setWatchlistModalOpen(true)}
-                onAddAvis={() => setAvisModalOpen(true)}
             />
 
-            {/* ── Modales ── */}
-            <CreateWatchlistModal
-                isOpen={watchlistModalOpen}
-                onClose={() => setWatchlistModalOpen(false)}
-            />
         </>
     );
 }

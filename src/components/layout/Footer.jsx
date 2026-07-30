@@ -1,6 +1,8 @@
 import { Link } from "react-router-dom";
+import { useAuth } from "@/context/AuthContext.jsx";
 
 function Footer() {
+    const { connected } = useAuth();
     return (
         <>
             <footer className="footer sm:footer-horizontal text-base-content p-10 backdrop-blur-md bg-base-200! shadow-primary/50">
@@ -42,7 +44,7 @@ function Footer() {
                 </aside>
                 <nav>
                     <h6 className="footer-title text-secondary font-unbounded font-semibold">Plan du site</h6>
-                    <Link to="/" className="hover:text-secondary duration-150 transition-colors ease-in-out">Accueil</Link>
+                    <Link to={connected ? "/timeline" : "/"} className="hover:text-secondary duration-150 transition-colors ease-in-out">Accueil</Link>
                     <Link to="/tendances" className="hover:text-secondary duration-150 transition-colors ease-in-out">Tendances</Link>
                     <Link to="/topavis" className="hover:text-secondary duration-150 transition-colors ease-in-out">Avis</Link>
                     <Link to="/topwatchlists" className="hover:text-secondary duration-150 transition-colors ease-in-out">Watchlists</Link>

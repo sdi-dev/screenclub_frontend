@@ -1,10 +1,11 @@
 import { useState } from "react";
-import { Pencil, MapPin, X } from "lucide-react";
+import { Pencil, MapPin, X, UserPlus2, UserCheck } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import GridBackground from "@components/layout/GridBackground.jsx";
 import { useTmdbPosters }  from "@hooks/useTmdbPosters.js";
 import { useTmdbBackdrop } from "@hooks/useTmdbBackdrop.js";
 import { useProfile }      from "@hooks/useProfile.js";
+import { useFollow } from "@hooks/useFollow.js";
 import DefaultBackdrop    from "@components/profil/DefaultBackdrop.jsx";
 
 // ─── Constantes ───────────────────────────────────────────────────────────────
@@ -12,66 +13,13 @@ import DefaultBackdrop    from "@components/profil/DefaultBackdrop.jsx";
 const FALLBACK = "https://placehold.co/400x600/252729/orange?text=SC&font=montserrat";
 const FALLBACK_AVATAR = "https://placehold.co/120x120/252729/orange?text=?&font=montserrat";
 
-// ─── Badges hexagonaux ────────────────────────────────────────────────────────
-
-const HEX_BADGES = [
-    {
-        emoji: "💙",
-        tooltip: "Pour avoir fait parti des 1 000 premiers inscrits",
-        gradient: "linear-gradient(135deg, #1e3a5f 0%, #2563eb 50%, #1d4ed8 100%)",
-        glow: "rgba(37,99,235,0.5)",
-    },
-    {
-        emoji: "👨‍💻",
-        tooltip: "Développeur ScreenClub",
-        gradient: "linear-gradient(135deg, #1a1a2e 0%, #7c3aed 50%, #4f46e5 100%)",
-        glow: "rgba(124,58,237,0.5)",
-    },
-];
-
-function HexBadge({ emoji, tooltip, gradient, glow }) {
-    const [hovered, setHovered] = useState(false);
-    return (
-        <div className="relative flex-shrink-0"
-             onMouseEnter={() => setHovered(true)}
-             onMouseLeave={() => setHovered(false)}>
-            <div
-                className="w-8 h-9 sm:w-9 sm:h-10 flex items-center justify-center text-base sm:text-lg cursor-default transition-transform duration-200"
-                style={{
-                    background: gradient,
-                    clipPath: "polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)",
-                    boxShadow: hovered ? `0 0 14px ${glow}` : "none",
-                    transform: hovered ? "scale(1.12)" : "scale(1)",
-                    filter: hovered ? `drop-shadow(0 0 6px ${glow})` : "none",
-                }}>
-                {emoji}
-            </div>
-            {hovered && (
-                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 z-50 pointer-events-none"
-                     style={{ whiteSpace: "nowrap" }}>
-                    <div className="px-2.5 py-1.5 rounded-lg text-[11px] font-semibold text-white max-w-[180px] text-center"
-                         style={{
-                             background: "oklch(from var(--color-base-300) l c h / 0.95)",
-                             border: "1px solid oklch(from var(--color-primary) l c h / 0.3)",
-                             boxShadow: "0 4px 16px oklch(0% 0 0 / 0.5)",
-                             whiteSpace: "normal",
-                         }}>
-                        {tooltip}
-                    </div>
-                    <div className="w-2 h-2 mx-auto -mt-1 rotate-45"
-                         style={{ background: "oklch(from var(--color-base-300) l c h / 0.95)" }} />
-                </div>
-            )}
-        </div>
-    );
-}
 
 // ─── Overlay avatar ───────────────────────────────────────────────────────────
 
 function AvatarOverlay({ src, onClose }) {
     return (
         <div
-            className="fixed inset-0 z-[200] flex items-center justify-center"
+            className="fixed inset-0 z-200 flex items-center justify-center"
             style={{ background: "oklch(0% 0 0 / 0.75)", backdropFilter: "blur(8px)" }}
             onClick={onClose}>
             <div
@@ -156,6 +104,66 @@ function Skeleton({ className = "" }) {
     );
 }
 
+// ─── Imports badges ───────────────────────────────────────────────────────────
+
+// Importe tous les fichiers du dossier rangs automatiquement (Vite)
+const BADGE_ICONS = import.meta.glob("@badges/rangs/*.svg", {
+    eager: true,
+    import: "default",
+});
+
+function getBadgeIcon(id) {
+    const match = Object.entries(BADGE_ICONS).find(([path]) => path.includes(`/${id}.`));
+    return match ? match[1] : null;
+}
+
+function BadgeList({ badges = [] }) {
+    if (!badges.length) return null;
+    return (
+        <div className="flex items-center gap-1.5">
+            {badges.map((badge) => {
+                const icon = getBadgeIcon(badge.id);
+                return (
+                    <div key={badge.id} className="relative group">
+                        {icon ? (
+                            <img
+                                src={icon}
+                                alt={badge.nom}
+                                className="object-contain drop-shadow"
+                                style={{ width: 28, height: 31 }}
+                            />
+                        ) : (
+                            /* Fallback texte si l'image est manquante */
+                            <span className="text-lg leading-none">{badge.nom?.[0]}</span>
+                        )}
+                        {/* Tooltip */}
+                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 z-50
+                                        px-2.5 py-1.5 rounded-lg text-xs whitespace-nowrap
+                                        pointer-events-none select-none
+                                        opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+                             style={{
+                                 background:  "oklch(from var(--color-base-300) l c h / 0.95)",
+                                 border:      "1px solid oklch(from var(--color-base-content) l c h / 0.12)",
+                                 boxShadow:   "0 4px 16px oklch(0% 0 0 / 0.3)",
+                                 backdropFilter: "blur(8px)",
+                             }}>
+                            <p className="font-bold text-base-content">{badge.nom}</p>
+                            {badge.description && (
+                                <p className="text-base-content/55 mt-0.5 max-w-[180px] whitespace-normal leading-snug">
+                                    {badge.description}
+                                </p>
+                            )}
+                            {/* Petite flèche */}
+                            <span className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent"
+                                  style={{ borderTopColor: "oklch(from var(--color-base-300) l c h / 0.95)" }} />
+                        </div>
+                    </div>
+                );
+            })}
+        </div>
+    );
+}
+
 function ProfileHeaderSkeleton() {
     return (
         <div className="flex flex-col lg:flex-row lg:items-end gap-5 -mt-14 lg:-mt-16 mb-6">
@@ -193,26 +201,34 @@ function parseBio(text) {
     return parts;
 }
 
-function ProfilePage() {
+function ProfilePage({targetUserId = null, isOwnProfile = true}) {
     const navigate = useNavigate();
     const [avatarOpen, setAvatarOpen] = useState(false);
 
     const {
         profile,
         stats,
-        favoriteFilms,
+        favoriteMedias,
         recentActivity,
         watchlist,
         diary,
+        badges,
         loading,
         error,
         hasBaseData,
-    } = useProfile();
+    } = useProfile(targetUserId);
 
-    const backdropTmdbId = favoriteFilms[0]?.tmdbId ?? null;
-    const backdrop       = useTmdbBackdrop(backdropTmdbId);
+    const {
+        following,
+        followersCount,
+        followingCount,
+        toggling,
+        toggle,
+    } = useFollow(targetUserId, isOwnProfile);
 
-    const favPosters    = useTmdbPosters(favoriteFilms);
+    const backdropTmdbId = favoriteMedias[0]?.tmdbId ?? null;
+    const backdrop = useTmdbBackdrop(backdropTmdbId, favoriteMedias[0]?.tmdbType ?? null);
+    const favPosters    = useTmdbPosters(favoriteMedias);
     const recentPosters = useTmdbPosters(recentActivity);
 
     if (!hasBaseData && !loading) {
@@ -307,7 +323,7 @@ function ProfilePage() {
 
                                         {/* Ligne 1 : nom + niveau + titre */}
                                         <div className="flex flex-wrap items-center gap-2 mb-1.5">
-                                            <h1 className="text-2xl lg:text-3xl font-black text-base-content tracking-tight">
+                                            <h1 className="text-2xl lg:text-3xl font-black font-unbounded text-base-content tracking-tight">
                                                 {profile.username}
                                             </h1>
                                             {profile.level != null && (
@@ -349,7 +365,7 @@ function ProfilePage() {
                                                     {profile.location}
                                                 </span>
                                             ) : (
-                                                <span className="text-base-content/30 italic">non renseigné</span>
+                                                <span className="text-base-content/30 italic">Non renseigné</span>
                                             )}
                                         </div>
 
@@ -359,49 +375,91 @@ function ProfilePage() {
                                                 {parseBio(profile.bio)}
                                             </p>
                                         ) : (
-                                            <p className="text-sm text-base-content/30 italic">Aucune bio renseignée.</p>
+                                            <p className="text-sm text-base-content/30 italic">Pas encore de bio 😢</p>
                                         )}
                                     </div>
                                 </div>
 
                                 {/* Bouton modifier mobile */}
                                 <div className="flex lg:hidden justify-between items-center gap-3">
-                                    <div className="flex items-center gap-2">
-                                        {HEX_BADGES.map((b, i) => <HexBadge key={i} {...b} />)}
-                                    </div>
-                                    <button onClick={() => navigate("/profil/modifier")}
-                                            className="btn btn-secondary btn-sm font-bold tracking-wide flex items-center gap-1.5"
-                                            style={{ boxShadow: "0 0 16px oklch(from var(--color-secondary) l c h / 0.3)" }}>
-                                        <Pencil size={13} strokeWidth={2.5} />
-                                        Modifier
-                                    </button>
+                                    <BadgeList badges={badges} />
+                                    {isOwnProfile ? (
+                                        <button onClick={() => navigate("/profil/modifier")}
+                                                className="btn btn-secondary btn-sm font-bold tracking-wide flex items-center gap-1.5"
+                                                style={{ boxShadow: "0 0 16px oklch(from var(--color-secondary) l c h / 0.3)" }}>
+                                            <Pencil size={13} strokeWidth={2.5} />
+                                            Modifier
+                                        </button>
+                                    ) : (
+                                        <button
+                                            onClick={toggle}
+                                            disabled={toggling}
+                                            className={`btn btn-sm font-bold tracking-wide flex items-center gap-1.5 transition-all duration-200
+            ${following ? "btn-ghost border border-primary/40 text-primary"
+                                                : "btn-primary"}`}
+                                            style={{
+                                                boxShadow: following
+                                                    ? "0 0 12px oklch(from var(--color-primary) l c h / 0.15)"
+                                                    : "0 0 12px oklch(from var(--color-primary) l c h / 0.4)",
+                                            }}>
+                                            {toggling ? (
+                                                <span className="loading loading-spinner loading-xs" />
+                                            ) : following ? (
+                                                <UserCheck size={13} strokeWidth={2.5} />
+                                            ) : (
+                                                <UserPlus2 size={13} strokeWidth={2.5} />
+                                            )}
+                                            {following ? "Suivi·e" : "Suivre"}
+                                        </button>
+                                    )}
                                 </div>
 
                                 {/* Stats + bouton modifier desktop */}
                                 <div className="flex flex-col items-end gap-3 shrink-0 lg:pb-1">
 
                                     <div className="hidden lg:flex items-center gap-3">
-                                        <div className="flex items-center gap-2">
-                                            {HEX_BADGES.map((b, i) => <HexBadge key={i} {...b} />)}
-                                        </div>
-                                        <button onClick={() => navigate("/profil/modifier")}
-                                                className="flex btn btn-secondary btn-sm font-bold tracking-wide items-center gap-1.5"
-                                                style={{ boxShadow: "0 0 16px oklch(from var(--color-secondary) l c h / 0.3)" }}>
-                                            <Pencil size={13} strokeWidth={2.5} />
-                                            Modifier le profil
-                                        </button>
+                                        <BadgeList badges={badges} />
+                                        {isOwnProfile ? (
+                                            <button onClick={() => navigate("/profil/modifier")}
+                                                    className="flex btn btn-secondary btn-sm font-bold tracking-wide items-center gap-1.5"
+                                                    style={{ boxShadow: "0 0 16px oklch(from var(--color-secondary) l c h / 0.3)" }}>
+                                                <Pencil size={13} strokeWidth={2.5} />
+                                                Modifier le profil
+                                            </button>
+                                        ) : (
+                                            <button
+                                                onClick={toggle}
+                                                disabled={toggling}
+                                                className={`flex btn btn-sm font-bold tracking-wide items-center gap-1.5 transition-all duration-200
+            ${following ? "btn-ghost border border-primary/40 text-primary hover:btn-error hover:border-error/40"
+                                                    : "btn-primary"}`}
+                                                style={{
+                                                    boxShadow: following
+                                                        ? "0 0 16px oklch(from var(--color-primary) l c h / 0.15)"
+                                                        : "0 0 16px oklch(from var(--color-primary) l c h / 0.4)",
+                                                }}>
+                                                {toggling ? (
+                                                    <span className="loading loading-spinner loading-xs" />
+                                                ) : following ? (
+                                                    <UserCheck size={13} strokeWidth={2.5} />
+                                                ) : (
+                                                    <UserPlus2 size={13} strokeWidth={2.5} />
+                                                )}
+                                                {following ? "Suivi·e" : "Suivre"}
+                                            </button>
+                                        )}
                                     </div>
 
                                     {/* Stats gradient */}
                                     <div className="flex items-center justify-center lg:justify-end gap-4 lg:gap-7 flex-wrap lg:flex-nowrap w-full">
                                         {[
-                                            // Ici changer films par oeuvres et proposer plus tard de mettre en avant soit les films
+                                            // Ici changer films par œuvres et proposer plus tard de mettre en avant soit les films
                                             // soit les séries, soit les animés.
-                                            { value: stats.films,     label: "Films" },
+                                            { value: stats.oeuvres,     label: "Oeuvres" },
                                             { value: stats.thisYear,  label: "Cette année" },
                                             { value: stats.lists,     label: "Listes" },
-                                            { value: stats.following, label: "Abonnements" },
-                                            { value: stats.followers, label: "Abonnés" },
+                                            { value: followingCount,  label: "Abonnements" },
+                                            { value: followersCount,  label: "Abonnés" },
                                         ].map(({ value, label }) => (
                                             <div key={label} className="text-center cursor-pointer group">
                                                 {loading ? (
@@ -437,7 +495,7 @@ function ProfilePage() {
 
                             {/* Œuvres favorites */}
                             <div>
-                                <h2 className="text-lg lg:text-xl text-secondary font-bold tracking-wide uppercase mb-4">
+                                <h2 className="text-lg lg:text-xl text-secondary font-bold font-unbounded tracking-wide uppercase mb-4">
                                     Œuvres favorites
                                 </h2>
                                 {loading ? (
@@ -446,11 +504,11 @@ function ProfilePage() {
                                             <Skeleton key={i} className="w-[calc(25%-6px)] lg:w-36 aspect-2/3 rounded-xl" />
                                         ))}
                                     </div>
-                                ) : favoriteFilms.length === 0 ? (
-                                    <p className="text-sm text-base-content/40 italic">Aucune œuvre favorite pour le moment.</p>
+                                ) : favoriteMedias.length === 0 ? (
+                                    <p className="text-sm text-base-content/40 italic">Pas encore d'oeuvres favorites, likez des oeuvres pour remplir cette section !</p>
                                 ) : (
                                     <div className="flex gap-2 lg:gap-3 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-                                        {favoriteFilms.map((f) => (
+                                        {favoriteMedias.map((f) => (
                                             <div key={f.id ?? f.tmdbId}
                                                  className="shrink-0 w-[calc(25%-6px)] lg:w-36"
                                                  onClick={() => f.tmdbId && navigate(`/media/${f.tmdbType ?? "movie"}/${f.tmdbId}`)}
@@ -469,7 +527,7 @@ function ProfilePage() {
                             {/* Activité récente */}
                             <div>
                                 <div className="flex items-center justify-between mb-4">
-                                    <h2 className="text-lg lg:text-xl text-secondary font-bold tracking-wide uppercase">
+                                    <h2 className="text-lg lg:text-xl text-secondary font-bold font-unbounded tracking-wide uppercase">
                                         Activité récente
                                     </h2>
                                     {recentActivity.length > 0 && (
@@ -483,7 +541,7 @@ function ProfilePage() {
                                         ))}
                                     </div>
                                 ) : recentActivity.length === 0 ? (
-                                    <p className="text-sm text-base-content/40 italic">Aucune activité récente.</p>
+                                    <p className="text-sm text-base-content/40 italic">Pas d'activité pour l'instant, laissez des avis ou créez des watchlists !</p>
                                 ) : (
                                     <div className="flex gap-2 lg:gap-3 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                                         {recentActivity.map((a) => (
@@ -564,7 +622,7 @@ function ProfilePage() {
                                         {[...Array(5)].map((_, i) => <Skeleton key={i} className="h-8 w-full" />)}
                                     </div>
                                 ) : diary.length === 0 ? (
-                                    <p className="text-sm text-base-content/40 italic">Aucune entrée dans le journal.</p>
+                                    <p className="text-sm text-base-content/40 italic">Rien dans le journal pour l'instant 😔</p>
                                 ) : (
                                     <div className="flex flex-col">
                                         {diary.map((entry, i) => {

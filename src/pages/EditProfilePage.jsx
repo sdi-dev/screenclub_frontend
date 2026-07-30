@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, User, FileText, MapPin, Image, Search, Check, X, Loader2, AlertCircle, Bold, Italic, Underline } from "lucide-react";
+import { ArrowLeft, User, FileText, MapPin, Image, Search, Check, X, Loader2, AlertCircle, Bold, Italic, Underline, RefreshCw } from "lucide-react";
 import { useProfile } from "@hooks/useProfile.js";
 import { fetchAuth } from "@/api/fetchAuth.js";
 import { searchSuggestions, tmdbImg } from "@services/tmdb.js";
@@ -77,6 +77,93 @@ function ApiStatus({ label, status }) {
                         "API inaccessible"
             }
             </span>
+        </div>
+    );
+}
+
+// ─── Sélecteur d'avatars Dicebear (fun-emoji) ────────────────────────────────
+
+const EMOJI_SEEDS = [
+    "Felix","Mittens","Whiskers","Biscuit","Mochi","Pumpkin","Gizmo","Noodle",
+    "Cheddar","Pickles","Waffles","Boba","Churro","Pretzel","Mango","Papaya",
+    "Kiwi","Lychee","Guava","Starfruit","Coconut","Dragonfruit","Persimmon",
+    "Kumquat","Jackfruit","Tamarind","Durian","Rambutan","Mangosteen","Ackee",
+    "Sapote","Cherimoya","Feijoa","Longan","Loquat","Pawpaw","Salak","Carambola",
+];
+
+const AVATAR_BG_COLORS = ["b6e3f4","c0aede","d1d4f9","ffd5dc","ffdfbf","f4d58d","b5ead7","ffc8dd"];
+
+function dicebearUrl(seed) {
+    const bg = AVATAR_BG_COLORS[Math.abs(seed.split("").reduce((a, c) => a + c.charCodeAt(0), 0)) % AVATAR_BG_COLORS.length];
+    return `https://api.dicebear.com/9.x/fun-emoji/svg?seed=${encodeURIComponent(seed)}&backgroundColor=${bg}`;
+}
+
+function DicebearPicker({ onSelect, currentAvatar }) {
+    const pick5 = () => {
+        const shuffled = [...EMOJI_SEEDS].sort(() => Math.random() - 0.5);
+        return shuffled.slice(0, 5);
+    };
+    const [seeds, setSeeds] = useState(() => pick5());
+    const [rolling, setRolling] = useState(false);
+
+    const reroll = () => {
+        setRolling(true);
+        setTimeout(() => {
+            setSeeds(pick5());
+            setRolling(false);
+        }, 300);
+    };
+
+    return (
+        <div className="flex flex-col gap-2">
+            <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold text-base-content/60 uppercase tracking-wider">
+                    Avatars DiceBear
+                </span>
+                <button
+                    type="button"
+                    onClick={reroll}
+                    className="btn btn-ghost btn-xs gap-1.5 text-primary/70 hover:text-primary transition-colors"
+                >
+                    <RefreshCw size={11} className={rolling ? "animate-spin" : ""} />
+                    Re-roll
+                </button>
+            </div>
+            <div className={`flex gap-2 transition-opacity duration-300 ${rolling ? "opacity-0" : "opacity-100"}`}>
+                {seeds.map((seed) => {
+                    const url = dicebearUrl(seed);
+                    const selected = currentAvatar === url;
+                    return (
+                        <button
+                            key={seed}
+                            type="button"
+                            onClick={() => onSelect(url)}
+                            title={seed}
+                            className="relative shrink-0 w-12 h-12 rounded-xl overflow-hidden transition-all duration-200 hover:scale-110"
+                            style={{
+                                border: selected
+                                    ? "2px solid oklch(from var(--color-primary) l c h)"
+                                    : "2px solid oklch(from var(--color-base-content) l c h / 0.1)",
+                                boxShadow: selected
+                                    ? "0 0 12px oklch(from var(--color-primary) l c h / 0.5)"
+                                    : "none",
+                                background: "oklch(from var(--color-base-200) l c h)",
+                            }}
+                        >
+                            <img src={url} alt={seed} className="w-full h-full object-cover" />
+                            {selected && (
+                                <span className="absolute inset-0 flex items-center justify-center rounded-xl"
+                                      style={{ background: "oklch(from var(--color-primary) l c h / 0.25)" }}>
+                                    <Check size={14} className="text-primary drop-shadow" />
+                                </span>
+                            )}
+                        </button>
+                    );
+                })}
+            </div>
+            <p className="text-[11px] text-base-content/30 italic">
+                Clique sur un avatar pour le sélectionner, ou re-roll pour en voir d'autres.
+            </p>
         </div>
     );
 }
@@ -389,6 +476,12 @@ export default function EditProfilePage() {
                                             />
                                         </Field>
                                     </div>
+                                </div>
+                                <div className="mt-4 pt-4" style={{ borderTop: "1px solid oklch(from var(--color-base-content) l c h / 0.07)" }}>
+                                    <DicebearPicker
+                                        currentAvatar={avatar}
+                                        onSelect={(url) => { setAvatar(url); validateAvatar(url); }}
+                                    />
                                 </div>
                             </Section>
                         </div>

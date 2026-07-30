@@ -2,71 +2,98 @@ import { useState, useEffect } from "react";
 import { getUser } from "@/api/auth.js";
 import { fetchAuth } from "@/api/fetchAuth.js";
 
-// ─── Valeurs par défaut (en attendant l'API ou si un champ est absent) ────────
+// ─── Valeurs par défaut ───────────────────────────────────────────────────────
 
-const DEFAULT_STATS   = { films: 0, thisYear: 0, lists: 0, following: 0, followers: 0 };
+const DEFAULT_STATS     = { oeuvres: 0, thisYear: 0, lists: 0, following: 0, followers: 0 };
 const DEFAULT_WATCHLIST = { count: 0, posters: [] };
 
 // ─── Hook ─────────────────────────────────────────────────────────────────────
 
 /**
- * Récupère toutes les données du profil de l'utilisateur connecté.
+ * Récupère toutes les données d'un profil.
  *
- * Endpoints attendus (à adapter à ton back Spring) :
- *   GET /api/users/me           → { pseudo, email, avatar, bio, location, countryCode, level, title, banner }
- *   GET /api/users/me/stats     → { films, thisYear, lists, following, followers }
- *   GET /api/users/me/favorites → [{ id, tmdbId, mediaTitle }]  (notes >= 4)
- *   GET /api/users/me/activity  → [{ type, id, tmdbId?, mediaTitle?, title?, note?, coverUrl? }]  (<7j)
- *   GET /api/users/me/watchlist → { count, posters: [url, ...] }
- *   GET /api/users/me/diary     → [{ month, day, title, rating }]
+ * @param {number|null} targetUserId
+ *   - undefined / null → charge le profil du connecté  (/api/users/me/*)
+ *   - un ID            → charge le profil public        (/api/users/{id}/*)
+ *
+ * Endpoints utilisés :
+ *   /api/users/me/**       → profil propre (authentifié)
+ *   /api/users/{id}/**     → profil public (sans auth)
  */
-export function useProfile() {
-    // Données immédiates issues du JWT (pas d'appel réseau)
-    const jwtUser = getUser();
+export function useProfile(targetUserId = null) {
+    const jwtUser  = getUser();
+    const isOwn    = !targetUserId;                          // true si profil propre
+    const base     = isOwn ? "/api/users/me" : `/api/users/${targetUserId}`;
+    const fetcher  = isOwn ? fetchAuth : publicFetch;        // auth uniquement pour /me
 
     const [profile,        setProfile]        = useState(null);
     const [stats,          setStats]          = useState(DEFAULT_STATS);
-    const [favoriteFilms,  setFavoriteFilms]  = useState([]);
+    const [favoriteMedias, setFavoriteMedias] = useState([]);
     const [recentActivity, setRecentActivity] = useState([]);
     const [watchlist,      setWatchlist]      = useState(DEFAULT_WATCHLIST);
     const [diary,          setDiary]          = useState([]);
+    const [badges,         setBadges]         = useState([]);
     const [loading,        setLoading]        = useState(true);
     const [error,          setError]          = useState(null);
 
+    // Recharge quand on change de profil cible
+    const cacheKey = targetUserId ?? jwtUser?.id;
+
     useEffect(() => {
-        if (!jwtUser?.id) {
+        // Sur /profil (profil propre), on a besoin du JWT
+        if (isOwn && !jwtUser?.id) {
+            setLoading(false);
+            return;
+        }
+        // Sur /profil/:id (profil public), on a juste besoin d'un ID valide
+        if (!isOwn && !targetUserId) {
             setLoading(false);
             return;
         }
 
+        let cancelled = false;
+        setLoading(true);
+
+        // Réinitialise l'affichage entre deux profils
+        setProfile(null);
+        setStats(DEFAULT_STATS);
+        setFavoriteMedias([]);
+        setRecentActivity([]);
+        setWatchlist(DEFAULT_WATCHLIST);
+        setDiary([]);
+        setBadges([]);
+
         const load = async () => {
             try {
-                // Lance tous les appels en parallèle pour minimiser le temps d'attente
                 const [profileData, statsData, favData, activityData, watchlistData, diaryData] =
                     await Promise.allSettled([
-                        fetchAuth("/api/users/me"),
-                        fetchAuth("/api/users/me/stats"),
-                        fetchAuth("/api/users/me/favorites"),
-                        fetchAuth("/api/users/me/activity"),
-                        fetchAuth("/api/users/me/watchlist"),
-                        fetchAuth("/api/users/me/diary"),
+                        fetcher(`${base}`),
+                        fetcher(`${base}/stats`),
+                        fetcher(`${base}/favorites`),
+                        fetcher(`${base}/activity`),
+                        fetcher(`${base}/watchlist`),
+                        fetcher(`${base}/diary`),
                     ]);
 
-                // Chaque requête est traitée indépendamment :
-                // si l'une échoue, les autres s'affichent quand même.
-                if (profileData.status === "fulfilled")   setProfile(profileData.value);
-                if (statsData.status    === "fulfilled")   setStats({ ...DEFAULT_STATS, ...statsData.value });
+                if (cancelled) return;
+
+                if (profileData.status === "fulfilled") {
+                    setProfile(profileData.value);
+                    setBadges(profileData.value?.badges ?? []);
+                }
+                if (statsData.status   === "fulfilled")  setStats({ ...DEFAULT_STATS, ...statsData.value });
+
                 if (favData.status === "fulfilled") {
-                    setFavoriteFilms((favData.value ?? []).map(f => ({
+                    setFavoriteMedias((favData.value ?? []).map(f => ({
                         id:       f.id,
-                        tmdbId:   f.tmdbId   ?? null,
+                        tmdbId:   f.tmdbId    ?? null,
                         title:    f.mediaTitle ?? f.title ?? "",
-                        tmdbType: f.tmdbType  ?? "movie",
+                        tmdbType: f.tmdbType   ?? "movie",
                     })));
                 }
+
                 if (activityData.status === "fulfilled") {
-                    const raw = activityData.value ?? [];
-                    setRecentActivity(raw.map(a => ({
+                    setRecentActivity((activityData.value ?? []).map(a => ({
                         id:       a.id,
                         type:     a.type     ?? "avis",
                         title:    a.type === "watchlist" ? a.title : a.mediaTitle,
@@ -76,46 +103,62 @@ export function useProfile() {
                         coverUrl: a.coverUrl ?? null,
                     })));
                 }
-                if (watchlistData.status === "fulfilled")  setWatchlist({ ...DEFAULT_WATCHLIST, ...watchlistData.value });
-                if (diaryData.status    === "fulfilled")   setDiary(diaryData.value ?? []);
+
+                if (watchlistData.status === "fulfilled") setWatchlist({ ...DEFAULT_WATCHLIST, ...watchlistData.value });
+                if (diaryData.status     === "fulfilled") setDiary(diaryData.value ?? []);
 
             } catch (err) {
-                setError(err.message);
+                if (!cancelled) setError(err.message);
             } finally {
-                setLoading(false);
+                if (!cancelled) setLoading(false);
             }
         };
 
         load();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [jwtUser?.id]);
+        return () => { cancelled = true; };
 
-    // Fusionne les données JWT (disponibles immédiatement) avec celles de l'API
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [cacheKey]);
+
+    // Fusionne les données API avec les données JWT (disponibles immédiatement)
+    // Pour un profil tiers, pas de fallback JWT → affichage uniquement API.
     const mergedProfile = {
-        username:    profile?.pseudo      ?? jwtUser?.username ?? "Utilisateur",
-        handle:      `@${profile?.pseudo  ?? jwtUser?.username ?? "utilisateur"}`,
-        bio:         profile?.bio         ?? "",
-        location:    profile?.location    ?? "",
-        countryCode: profile?.countryCode ?? "",
-        level:       profile?.level       ?? 1,
-        title:       profile?.title       ?? "",
+        username:       profile?.pseudo         ?? (isOwn ? jwtUser?.username : "Utilisateur"),
+        handle:         `@${profile?.pseudo     ?? (isOwn ? jwtUser?.username : "utilisateur")}`,
+        bio:            profile?.bio            ?? "",
+        location:       profile?.location       ?? "",
+        countryCode:    profile?.countryCode    ?? "",
+        level:          profile?.level          ?? 1,
+        title:          profile?.title          ?? "",
         banner:         profile?.banner         ?? null,
         bannerPosition: profile?.bannerPosition ?? 50,
-        avatar:      profile?.avatar      ?? jwtUser?.avatar ?? null,
-        email:       profile?.email       ?? jwtUser?.email  ?? "",
-        id:          jwtUser?.id          ?? null,
+        avatar:         profile?.avatar         ?? (isOwn ? jwtUser?.avatar : null),
+        email:          profile?.email          ?? (isOwn ? jwtUser?.email  : ""),
+        id:             profile?.id             ?? (isOwn ? jwtUser?.id     : targetUserId),
     };
 
     return {
-        profile:       mergedProfile,
+        profile:     mergedProfile,
         stats,
-        favoriteFilms,
+        favoriteMedias,
         recentActivity,
         watchlist,
         diary,
+        badges,
         loading,
         error,
-        /** true si on a au moins les données JWT, même avant la réponse API */
-        hasBaseData:   !!jwtUser,
+        /** true si on a au moins les données minimales pour afficher le profil */
+        hasBaseData: isOwn ? !!jwtUser : !!targetUserId,
     };
+}
+
+// ─── Fetch sans auth (profils publics) ───────────────────────────────────────
+
+/**
+ * Fetch simple sans header Authorization — pour les endpoints publics /api/users/{id}/*.
+ */
+async function publicFetch(url) {
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`HTTP ${res.status} sur ${url}`);
+    return res.json();
 }

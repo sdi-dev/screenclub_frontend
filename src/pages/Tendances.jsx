@@ -1,5 +1,6 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
+import {Info, Play} from "lucide-react";
 
 /* ─── TMDB CONFIG ──────────────────────────────────────────── */
 const API_KEY   = import.meta.env.VITE_TMDB_API_KEY;
@@ -213,21 +214,14 @@ function HeroCarousel({ items }) {
 
                 {/* CTA buttons */}
                 <div className="flex gap-3 flex-wrap">
-                    <button className="btn btn-primary gap-2 rounded-full px-7 font-bold"
-                            style={{ fontFamily: "var(--font-unbounded)", fontSize: "0.7rem" }}
+                    <button className="btn btn-primary font-bold uppercase"
                             onClick={handleHeroClick}>
-                        <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24">
-                            <path d="M8 5v14l11-7z"/>
-                        </svg>
+                        <Play />
                         Voir
                     </button>
-                    <button className="btn btn-ghost border border-base-content/25 gap-2 rounded-full px-7 font-bold backdrop-blur-sm"
-                            style={{ fontFamily: "var(--font-unbounded)", fontSize: "0.7rem", background: "oklch(50% 0 0 / 0.2)" }}
+                    <button className="btn btn-ghost uppercase border border-base-content/25 gap-2 px-7 font-bold backdrop-blur-sm"
                             onClick={handleHeroClick}>
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                            <circle cx="12" cy="12" r="10"/>
-                            <path d="M12 16v-4M12 8h.01"/>
-                        </svg>
+                        <Info />
                         Plus d'infos
                     </button>
                 </div>
